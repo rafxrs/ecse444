@@ -1,0 +1,13 @@
+2025-10-14 14:39:57,527 [INFO] Activator:176 - 
+
+
+2025-10-14 14:39:57,540 [INFO] Activator:177 - !SESSION log4j initialized
+2025-10-14 14:40:05,792 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] 
+2025-10-14 14:40:07,337 [INFO] ApplicationProperties:184 - Using Application install path: C:\ST\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.15.0.202507011659
+2025-10-14 14:40:07,392 [INFO] DbMcusXml:78 - Set database path to: C:\ST\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.15.0.202507011659\\db\/mcu/
+2025-10-14 14:40:07,392 [INFO] ApiDb:274 - Set plugin database path to: C:\ST\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.15.0.202507011659\\db\/plugins/boardmanager/
+2025-10-14 14:40:07,393 [WARN] ApiDb:259 - Overriding images path with different value:  => C:\ST\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.15.0.202507011659\\db\/plugins/mcufinder/images/
+2025-10-14 14:40:07,410 [INFO] ApiDb:250 - Set database path to: C:\Users\rafae\.stmcufinder\plugins\mcufinder//mcu/
+2025-10-14 14:40:07,412 [INFO] DbMcusAds:125 - Set database path to: C:\Users\rafae\.stmcufinder\plugins\mcufinder//mcu/
+2025-10-14 14:40:07,423 [INFO] CrossReferenceDbSqlite:203 - Set database path to: C:\Users\rafae\.stmcufinder\plugins\mcufinder//mcu/cs/
+2025-10-14 14:40:07,687 [INFO] RulesReader:64 - Compatibility file has been processed (317 Rules)

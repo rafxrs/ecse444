@@ -1,0 +1,11 @@
+baud rate 115200
+
+BSP functions like stm32l4s5i_iot01_hsensor.h must be included in main.c
+
+Choose one thing to measure using each of the following: HTS221, LIS3MDL, LSM6DSL, and
+LPS22HB
+The code generation process does not initialize the peripherals. Do so by calling the appropriate
+initialization functions (e.g., BSP_HSENSOR_Init()) in main.c
+
+write code to read each sensor value (four of them) at 10 H
+

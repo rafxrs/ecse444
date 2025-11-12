@@ -1,0 +1,349 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * File Name          : freertos.c
+  * Description        : Code for freertos applications
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "stm32l4s5i_iot01_tsensor.h"
+#include "stm32l4s5i_iot01_psensor.h"
+#include "stm32l4s5i_iot01_magneto.h"
+#include "stm32l4s5i_iot01_accelero.h"
+#include "stm32l4s5i_iot01_qspi.h"
+#include <string.h>
+#include <stdio.h>
+
+// External handles from main.c
+extern UART_HandleTypeDef huart1;
+extern I2C_HandleTypeDef hi2c2;
+extern OSPI_HandleTypeDef hospi1;
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN Variables */
+volatile float temp;
+volatile float pressure;
+volatile int16_t mag_data[3];
+volatile int16_t accel_data[3];
+extern volatile uint8_t sensor_mode;
+static uint8_t printed_summary = 0;
+
+/* QSPI logging configuration */
+#define QSPI_BLOCK_SIZE   0x10000
+#define FLASH_ADDR_BASE   0x000000
+#define STATS_BATCH_SIZE  100     // store stats every 100 samples
+
+static uint32_t flash_addr = FLASH_ADDR_BASE;
+
+/* Struct for running stats */
+typedef struct {
+    uint32_t count;
+    float mean_temp, M2_temp;
+    float mean_press, M2_press;
+    float mean_mag[3], M2_mag[3];
+    float mean_acc[3], M2_acc[3];
+} RunningStats;
+
+static RunningStats stats;
+/* USER CODE END Variables */
+osThreadId defaultTaskHandle;
+osThreadId sensorTaskHandle;
+osThreadId buttonTaskHandle;
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+static void QSPI_StoreStats(void);
+static void QSPI_ReadStatsAndPrint(void);
+/* USER CODE END FunctionPrototypes */
+
+void StartDefaultTask(void const * argument);
+void StartSensorTask(void const * argument);
+void StartButtonTask(void const * argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+  *ppxIdleTaskStackBuffer = &xIdleStack[0];
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+  /* place for user code */
+}
+/* USER CODE END GET_IDLE_TASK_MEMORY */
+
+/**
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+	void MX_FREERTOS_Init(void);
+	/* USER CODE BEGIN Init */
+	static void QSPI_StoreStats(void)
+	{
+	    BSP_QSPI_Write((uint8_t*)&stats, flash_addr, sizeof(RunningStats));
+	    while (BSP_QSPI_GetStatus() != QSPI_OK);
+	    flash_addr += sizeof(RunningStats);
+
+	    if (flash_addr >= QSPI_BLOCK_SIZE)  // simple rollover
+	        flash_addr = FLASH_ADDR_BASE;
+	}
+
+	static void QSPI_ReadStatsAndPrint(void)
+	{
+	    RunningStats readStats;
+	    uint32_t addr = FLASH_ADDR_BASE;
+	    char msg[128];
+	    uint32_t numBlocks = 0;
+
+	    while (addr < flash_addr) {
+	        BSP_QSPI_Read((uint8_t*)&readStats, addr, sizeof(RunningStats));
+	        while (BSP_QSPI_GetStatus() != QSPI_OK);
+	        addr += sizeof(RunningStats);
+	        numBlocks++;
+	    }
+
+	    sprintf(msg, "\r\nTotal logged stat blocks: %lu\r\n", numBlocks);
+	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+	    sprintf(msg, "Last block count=%lu\r\n", readStats.count);
+	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+	    sprintf(msg, "Temp mean=%d var=%d\r\n",
+	            (int)(readStats.mean_temp + 0.5f),
+	            (int)((readStats.M2_temp / readStats.count) + 0.5f));
+	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+	    sprintf(msg, "Press mean=%d var=%d\r\n",
+	            (int)(readStats.mean_press + 0.5f),
+	            (int)((readStats.M2_press / readStats.count) + 0.5f));
+	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+	    const char* axis[3] = {"X", "Y", "Z"};
+	    for (int i = 0; i < 3; i++) {
+	        sprintf(msg, "Mag[%s] mean=%d var=%d\r\n",
+	                axis[i],
+	                (int)(readStats.mean_mag[i] + 0.5f),
+	                (int)((readStats.M2_mag[i] / readStats.count) + 0.5f));
+	        HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+	    }
+	    for (int i = 0; i < 3; i++) {
+	        sprintf(msg, "Acc[%s] mean=%d var=%d\r\n",
+	                axis[i],
+	                (int)(readStats.mean_acc[i] + 0.5f),
+	                (int)((readStats.M2_acc[i] / readStats.count) + 0.5f));
+	        HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+	    }
+	}
+	/* USER CODE END Init */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of sensorTask */
+  osThreadDef(sensorTask, StartSensorTask, osPriorityNormal, 0, 256);
+  sensorTaskHandle = osThreadCreate(osThread(sensorTask), NULL);
+
+  /* definition and creation of buttonTask */
+  osThreadDef(buttonTask, StartButtonTask, osPriorityLow, 0, 128);
+  buttonTaskHandle = osThreadCreate(osThread(buttonTask), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+}
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDefaultTask */
+  /* Infinite loop */
+	  char output[64];
+
+	  for(;;)
+	  {
+	    osDelay(100);
+	    int t = (int)(temp + 0.5f);
+	    int p = (int)(pressure + 0.5f);
+
+	    switch(sensor_mode)
+	    {
+	      case 0: {
+	          printed_summary = 0;
+	          sprintf(output, "Temp = %d C\r\n", t);
+	          HAL_UART_Transmit(&huart1, (uint8_t*)output, strlen(output), 100);
+	          break;
+	      }
+	      case 1: {
+	          sprintf(output, "Press = %d hPa\r\n", p);
+	          HAL_UART_Transmit(&huart1, (uint8_t*)output, strlen(output), 100);
+	          break;
+	      }
+	      case 2: {
+	          sprintf(output, "Mag [mG] X=%d Y=%d Z=%d\r\n",
+	                  mag_data[0], mag_data[1], mag_data[2]);
+	          HAL_UART_Transmit(&huart1, (uint8_t*)output, strlen(output), 100);
+	          break;
+	      }
+	      case 3: {
+	          sprintf(output, "Accel [mg] X=%d Y=%d Z=%d\r\n",
+	                  accel_data[0], accel_data[1], accel_data[2]);
+	          HAL_UART_Transmit(&huart1, (uint8_t*)output, strlen(output), 100);
+	          break;
+	      }
+	      case 4:
+	          if (!printed_summary) {
+	              printed_summary = 1;
+	              QSPI_ReadStatsAndPrint();
+	          }
+	          break;
+	    }
+	  }
+  /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartSensorTask */
+/**
+* @brief Function implementing the sensorTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSensorTask */
+void StartSensorTask(void const * argument)
+{
+  /* USER CODE BEGIN StartSensorTask */
+	/* Infinite loop */
+	uint32_t sampleCounter = 0;
+
+	for(;;)
+    {
+	        osDelay(100); // 10 Hz sampling
+
+	        temp = BSP_TSENSOR_ReadTemp();
+	        pressure = BSP_PSENSOR_ReadPressure();
+	        BSP_MAGNETO_GetXYZ((int16_t*)mag_data);
+	        BSP_ACCELERO_AccGetXYZ((int16_t*)accel_data);
+
+	        stats.count += 1;
+
+	        // Temperature
+	        float d = temp - stats.mean_temp;
+	        stats.mean_temp += d / stats.count;
+	        stats.M2_temp += d * (temp - stats.mean_temp);
+
+	        // Pressure
+	        d = pressure - stats.mean_press;
+	        stats.mean_press += d / stats.count;
+	        stats.M2_press += d * (pressure - stats.mean_press);
+
+	        // Magnetometer and accelerometer (per axis)
+	        for (int i = 0; i < 3; i++) {
+	            float xm = mag_data[i];
+	            float xa = accel_data[i];
+
+	            float dm = xm - stats.mean_mag[i];
+	            stats.mean_mag[i] += dm / stats.count;
+	            stats.M2_mag[i] += dm * (xm - stats.mean_mag[i]);
+
+	            float da = xa - stats.mean_acc[i];
+	            stats.mean_acc[i] += da / stats.count;
+	            stats.M2_acc[i] += da * (xa - stats.mean_acc[i]);
+	        }
+
+	        sampleCounter++;
+	        if (sampleCounter >= STATS_BATCH_SIZE) {
+	            sampleCounter = 0;
+	            QSPI_StoreStats();
+	        }
+	    }
+  /* USER CODE END StartSensorTask */
+}
+
+/* USER CODE BEGIN Header_StartButtonTask */
+/**
+* @brief Function implementing the buttonTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartButtonTask */
+void StartButtonTask(void const * argument)
+{
+  /* USER CODE BEGIN StartButtonTask */
+  /* Infinite loop */
+  for(;;)
+  {
+	  osDelay(1);
+  }
+  /* USER CODE END StartButtonTask */
+}
+
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
+
+/* USER CODE END Application */

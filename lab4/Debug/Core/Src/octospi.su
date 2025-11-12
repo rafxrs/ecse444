@@ -1,0 +1,3 @@
+../Core/Src/octospi.c:30:6:MX_OCTOSPI1_Init	32	static
+../Core/Src/octospi.c:72:6:HAL_OSPI_MspInit	200	static
+../Core/Src/octospi.c:119:6:HAL_OSPI_MspDeInit	16	static

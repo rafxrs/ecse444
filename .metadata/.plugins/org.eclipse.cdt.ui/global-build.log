@@ -1,0 +1,123 @@
+17:41:31 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/freertos.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/freertos.d" -MT"Core/Src/freertos.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/freertos.o"
+arm-none-eabi-gcc -o "lab4.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\lab4\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab4.elf
+ 
+arm-none-eabi-size  lab4.elf 
+arm-none-eabi-objdump -h -S lab4.elf  > "lab4.list"
+   text	   data	    bss	    dec	    hex	filename
+  40884	    228	   6516	  47628	   ba0c	lab4.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab4.list
+ 
+17:41:35 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-size  lab4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  40884	    228	   6516	  47628	   ba0c	lab4.elf
+Finished building: default.size.stdout
+ 
+17:44:02 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/freertos.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/freertos.d" -MT"Core/Src/freertos.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/freertos.o"
+arm-none-eabi-gcc -o "lab4.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\lab4\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab4.elf
+ 
+arm-none-eabi-size  lab4.elf 
+arm-none-eabi-objdump -h -S lab4.elf  > "lab4.list"
+   text	   data	    bss	    dec	    hex	filename
+  40884	    228	   6516	  47628	   ba0c	lab4.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab4.list
+ 
+17:49:53 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/freertos.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/freertos.d" -MT"Core/Src/freertos.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/freertos.o"
+arm-none-eabi-gcc -o "lab4.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\lab4\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab4.elf
+ 
+arm-none-eabi-size  lab4.elf 
+arm-none-eabi-objdump -h -S lab4.elf  > "lab4.list"
+   text	   data	    bss	    dec	    hex	filename
+  40808	    228	   6516	  47552	   b9c0	lab4.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab4.list
+ 
+17:54:30 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/freertos.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/freertos.d" -MT"Core/Src/freertos.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/freertos.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:119:12: warning: unused variable 'addr' [-Wunused-variable]
+  119 |   uint32_t addr = 0x000000;  // start of flash
+      |            ^~~~
+../Core/Src/main.c:118:11: warning: unused variable 'rx_buffer' [-Wunused-variable]
+  118 |   uint8_t rx_buffer[16]  = {0};
+      |           ^~~~~~~~~
+../Core/Src/main.c:117:11: warning: unused variable 'tx_buffer' [-Wunused-variable]
+  117 |   uint8_t tx_buffer[16]  = "QSPI Works!\0";
+      |           ^~~~~~~~~
+arm-none-eabi-gcc -o "lab4.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\lab4\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab4.elf
+ 
+arm-none-eabi-size  lab4.elf 
+arm-none-eabi-objdump -h -S lab4.elf  > "lab4.list"
+   text	   data	    bss	    dec	    hex	filename
+  40920	    228	   6516	  47664	   ba30	lab4.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab4.list
+ 
+17:57:07 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/freertos.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/freertos.d" -MT"Core/Src/freertos.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/freertos.o"
+arm-none-eabi-gcc -o "lab4.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\lab4\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab4.elf
+ 
+arm-none-eabi-size  lab4.elf 
+arm-none-eabi-objdump -h -S lab4.elf  > "lab4.list"
+   text	   data	    bss	    dec	    hex	filename
+  40920	    228	   6516	  47664	   ba30	lab4.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab4.list
+ 
+17:59:31 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-size  lab4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  40920	    228	   6516	  47664	   ba30	lab4.elf
+Finished building: default.size.stdout
+ 
+13:47:22 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/freertos.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/mx25r6435f" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lis3mdl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/hts221" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lsm6dsl" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/lps22hb" -I"C:/Users/rafae/STM32CubeIDE/workspace_1.19.0/lab4/Drivers/Components/Common" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/freertos.d" -MT"Core/Src/freertos.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/freertos.o"
+arm-none-eabi-gcc -o "lab4.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\lab4\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab4.elf
+ 
+arm-none-eabi-size  lab4.elf 
+arm-none-eabi-objdump -h -S lab4.elf  > "lab4.list"
+   text	   data	    bss	    dec	    hex	filename
+  40920	    228	   6516	  47664	   ba30	lab4.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab4.list
+ 
+14:35:21 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-size  lab4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  40920	    228	   6516	  47664	   ba30	lab4.elf
+Finished building: default.size.stdout
+ 
+14:48:59 **** Incremental Build of configuration Debug for project lab4 ****
+make -j20 all 
+arm-none-eabi-size  lab4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  40920	    228	   6516	  47664	   ba30	lab4.elf
+Finished building: default.size.stdout
+ 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item key="hasShownOverlayPopupBefore" value="true"/>
+	<item key="replaceBarOpen" value="false"/>
+	<list key="searchhistory">
+		<item value="GPIO"/>
+		<item value="osKe"/>
+		<item value="huart"/>
+		<item value="osKernel"/>
+		<item value="GPIO_Init"/>
+		<item value="play_sample_once_blocking"/>
+		<item value="play_sample_once_blocking()"/>
+		<item value="play_sample_once_blocking();"/>
+		<item value="void HAL_DFSM"/>
+		<item value="play_six"/>
+		<item value="void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *h)"/>
+		<item value="play_sample"/>
+		<item value="stop_play"/>
+		<item value="g_state = "/>
+		<item value="error"/>
+	</list>
+</section>

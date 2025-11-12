@@ -1,0 +1,7 @@
+../Core/Src/freertos.c:104:6:vApplicationGetIdleTaskMemory	1
+../Core/Src/freertos.c:114:13:QSPI_StoreStats	3
+../Core/Src/freertos.c:124:13:QSPI_ReadStatsAndPrint	5
+../Core/Src/freertos.c:174:6:MX_FREERTOS_Init	1
+../Core/Src/freertos.c:202:6:StartDefaultTask	8
+../Core/Src/freertos.c:252:6:StartSensorTask	3
+../Core/Src/freertos.c:301:6:StartButtonTask	4
