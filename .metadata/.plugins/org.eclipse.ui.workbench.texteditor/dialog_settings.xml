@@ -3,6 +3,8 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="IDLE"/>
+		<item value="sin"/>
 		<item value="GPIO"/>
 		<item value="osKe"/>
 		<item value="huart"/>
@@ -16,7 +18,5 @@
 		<item value="void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *h)"/>
 		<item value="play_sample"/>
 		<item value="stop_play"/>
-		<item value="g_state = "/>
-		<item value="error"/>
 	</list>
 </section>

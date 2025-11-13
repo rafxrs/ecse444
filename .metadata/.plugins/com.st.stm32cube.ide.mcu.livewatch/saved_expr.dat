@@ -3,3 +3,4 @@ pressure
 mag_data
 accel_data
 sensor_mode
+g_state
