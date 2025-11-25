@@ -3,20 +3,20 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
-		<item value="micBuffer"/>
+		<item value="mapped"/>
+		<item value="memory"/>
+		<item value="GameRecord"/>
+		<item value="BSP_QSPI_Erase"/>
+		<item value="BSP_QSPI"/>
+		<item value="Flash_Read"/>
+		<item value="FLASH_STA"/>
+		<item value="FLASH"/>
+		<item value="QSPI"/>
+		<item value="Flash_WriteStat"/>
+		<item value="Flash_WriteStat;"/>
 		<item value="micLoud"/>
+		<item value="micBuffer"/>
 		<item value="BSP_ACCELERO_AccGetXYZ"/>
 		<item value="IDLE"/>
-		<item value="sin"/>
-		<item value="GPIO"/>
-		<item value="osKe"/>
-		<item value="huart"/>
-		<item value="osKernel"/>
-		<item value="GPIO_Init"/>
-		<item value="play_sample_once_blocking"/>
-		<item value="play_sample_once_blocking()"/>
-		<item value="play_sample_once_blocking();"/>
-		<item value="void HAL_DFSM"/>
-		<item value="play_six"/>
 	</list>
 </section>
