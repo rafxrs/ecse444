@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include "math.h"
 #include "arm_math.h"
+#include "stm32l4s5i_iot01_accelero.h"
+#include "stm32l4s5i_iot01_qspi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,14 +37,16 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define FS_HZ 			32000.0f
-#define NOTE_MAX_SAMPLES 1024
+#define FS_HZ 			16000.0f
 #define DAC_MID        2048
 #define DAC_AMP        2000
 #define NOTE_DURATION_MS 250
+#define NOTE_MAX_SAMPLES 1024
 #define NUM_CUES        30
 #define CUE_DELAY_MS    2000    // 2 seconds to react
-
+#define FLASH_ADDR_BASE   0x000000
+#define MIC_THRESHOLD   100000   // adjust after testing
+#define NSAMPLES 512
 typedef enum {
   GAME_AWAKE,
   GAME_IDLE,
@@ -69,7 +73,13 @@ typedef enum {
 DAC_HandleTypeDef hdac1;
 DMA_HandleTypeDef hdma_dac1_ch1;
 
+DFSDM_Filter_HandleTypeDef hdfsdm1_filter0;
+DFSDM_Channel_HandleTypeDef hdfsdm1_channel2;
+DMA_HandleTypeDef hdma_dfsdm1_flt0;
+
 I2C_HandleTypeDef hi2c2;
+
+OSPI_HandleTypeDef hospi1;
 
 TIM_HandleTypeDef htim2;
 
@@ -82,7 +92,15 @@ static uint32_t  noteLen = 0;
 static CueType cueList[NUM_CUES];
 static uint8_t cueResults[NUM_CUES];   // 1 = pass, 0 = miss
 static volatile uint8_t playerResponded = 0;
+static volatile uint8_t playerFail = 0;
 static volatile CueType currentCue = CUE_LED;
+volatile int16_t accel_data[3];
+static uint32_t flash_addr = FLASH_ADDR_BASE;
+static volatile uint8_t micLoud = 0;
+// Mic (DFSDM) raw buffer (32-bit words with top 24-bit signed sample)
+static int32_t  micBuffer[NSAMPLES];
+// Converted samples for DAC (12-bit right-aligned stored in 16-bit)
+static uint16_t dacSampleBuffer[NSAMPLES];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,6 +111,8 @@ static void MX_DAC1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_DFSDM1_Init(void);
+static void MX_OCTOSPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -127,7 +147,7 @@ static void start_note_circular(float freq_hz, uint16_t *buf, uint32_t *len) {
 }
 
 static void play_start_sequence(void) {
-  const float freqs[3] = {400.0f, 500.0f, 600.0f};
+  const float freqs[3] = {400.0f, 500.0f, 800.0f};
   for (int i = 0; i < 3; i++) {
     start_note_circular(freqs[i], noteBuf, &noteLen);
     HAL_Delay(NOTE_DURATION_MS);
@@ -145,7 +165,15 @@ static void play_end_sequence(void) {
     HAL_Delay(100);
   }
 }
-
+// Map signed 24-bit DFSDM sample (in bits[31:8]) to unsigned 12-bit DAC
+static inline uint16_t q24_to_dac12(int32_t s)
+{
+  int32_t v = (s >> 11);       // discard 8 LSBs + reduce gain
+  v += DAC_MID;                // center around mid-scale
+  if (v < 0)    v = 0;
+  if (v > 4095) v = 4095;
+  return (uint16_t)v;
+}
 
 /* USER CODE END 0 */
 
@@ -183,8 +211,11 @@ int main(void)
   MX_TIM2_Init();
   MX_I2C2_Init();
   MX_USART1_UART_Init();
+  MX_DFSDM1_Init();
+  MX_OCTOSPI1_Init();
   /* USER CODE BEGIN 2 */
-
+  BSP_ACCELERO_Init();
+  BSP_QSPI_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -235,13 +266,18 @@ int main(void)
 
 	  	    for (int i = 0; i < NUM_CUES; i++) {
 	  	        playerResponded = 0;
+	  	        playerFail = 0;
 
 	  	        // --- Present cue ---
 				  currentCue = cueList[i];
 				  switch (currentCue) {
-					  case CUE_SOUND1: start_note_circular(400.0f, noteBuf, &noteLen); break;
-					  case CUE_SOUND2: start_note_circular(600.0f, noteBuf, &noteLen); break;
-					  case CUE_SOUND3: start_note_circular(800.0f, noteBuf, &noteLen); break;
+					  case CUE_SOUND1: start_note_circular(600.0f, noteBuf, &noteLen); break;
+					  case CUE_SOUND2: start_note_circular(1000.0f, noteBuf, &noteLen); break;
+					  case CUE_SOUND3:
+						  start_note_circular(800.0f, noteBuf, &noteLen);
+						  micLoud = 0;
+						  HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, micBuffer, NSAMPLES);
+						  break;
 					  case CUE_LED:
 						  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 						  break;
@@ -251,7 +287,36 @@ int main(void)
 	  	        // --- Wait for reaction window ---
 	  	        uint32_t start = HAL_GetTick();
 	  	        while ((HAL_GetTick() - start) < CUE_DELAY_MS) {
-	  	            if (playerResponded) break;
+	  	            if (playerResponded || playerFail) {
+	  	            	continue;
+	  	            }
+	  	        	if (currentCue == CUE_SOUND1 || currentCue == CUE_SOUND2) {
+	  	        		// poll I2C
+	  	        		BSP_ACCELERO_AccGetXYZ((int16_t*)accel_data);
+	  	        		HAL_Delay(5);
+	  	        		if (currentCue == CUE_SOUND1) {
+	  	        			if (accel_data[0] > 500) {
+	  	        				playerResponded = 1;
+	  	        			}
+	  	        			else if (accel_data[0] < -500) {
+	  	        				playerFail = 1;
+	  	        			}
+	  	        		} else {
+	  	        			if (accel_data[0] < -500) {
+	  	        				playerResponded = 1;
+	  	        			}
+	  	        			else if (accel_data[0] > 500) {
+	  	        				playerFail = 1;
+	  	        			}
+	  	        		}
+	  	        	}
+	  	        	// microphone cue
+	  	        	if (currentCue == CUE_SOUND3) {
+	  	        		if (micLoud)
+	  	        		{
+	  	        			playerResponded = 1;
+	  	        		}
+	  	        	}
 	  	        }
 
 	  	        // --- Evaluate result ---
@@ -267,6 +332,8 @@ int main(void)
 
 	  	        // --- Cleanup ---
 	  	        stop_playback_if_running();
+	  	        // stop microphone recording if this cue used it
+	  	        HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
 	  	        HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 	  	        HAL_Delay(300); // small gap before next cue
 	  	    }
@@ -304,7 +371,7 @@ void SystemClock_Config(void)
 
   /** Configure the main internal regulator output voltage
   */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST) != HAL_OK)
   {
     Error_Handler();
   }
@@ -316,7 +383,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 60;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -326,12 +399,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
     Error_Handler();
   }
@@ -367,7 +440,7 @@ static void MX_DAC1_Init(void)
   */
   sConfig.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
   sConfig.DAC_Trigger = DAC_TRIGGER_T2_TRGO;
-  sConfig.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_DISABLE;
+  sConfig.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_ABOVE_80MHZ;
   sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
   sConfig.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_DISABLE;
   sConfig.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
@@ -378,6 +451,59 @@ static void MX_DAC1_Init(void)
   /* USER CODE BEGIN DAC1_Init 2 */
 
   /* USER CODE END DAC1_Init 2 */
+
+}
+
+/**
+  * @brief DFSDM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_DFSDM1_Init(void)
+{
+
+  /* USER CODE BEGIN DFSDM1_Init 0 */
+
+  /* USER CODE END DFSDM1_Init 0 */
+
+  /* USER CODE BEGIN DFSDM1_Init 1 */
+
+  /* USER CODE END DFSDM1_Init 1 */
+  hdfsdm1_filter0.Instance = DFSDM1_Filter0;
+  hdfsdm1_filter0.Init.RegularParam.Trigger = DFSDM_FILTER_SW_TRIGGER;
+  hdfsdm1_filter0.Init.RegularParam.FastMode = ENABLE;
+  hdfsdm1_filter0.Init.RegularParam.DmaMode = ENABLE;
+  hdfsdm1_filter0.Init.FilterParam.SincOrder = DFSDM_FILTER_SINC3_ORDER;
+  hdfsdm1_filter0.Init.FilterParam.Oversampling = 64;
+  hdfsdm1_filter0.Init.FilterParam.IntOversampling = 1;
+  if (HAL_DFSDM_FilterInit(&hdfsdm1_filter0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  hdfsdm1_channel2.Instance = DFSDM1_Channel2;
+  hdfsdm1_channel2.Init.OutputClock.Activation = ENABLE;
+  hdfsdm1_channel2.Init.OutputClock.Selection = DFSDM_CHANNEL_OUTPUT_CLOCK_SYSTEM;
+  hdfsdm1_channel2.Init.OutputClock.Divider = 117;
+  hdfsdm1_channel2.Init.Input.Multiplexer = DFSDM_CHANNEL_EXTERNAL_INPUTS;
+  hdfsdm1_channel2.Init.Input.DataPacking = DFSDM_CHANNEL_STANDARD_MODE;
+  hdfsdm1_channel2.Init.Input.Pins = DFSDM_CHANNEL_SAME_CHANNEL_PINS;
+  hdfsdm1_channel2.Init.SerialInterface.Type = DFSDM_CHANNEL_SPI_RISING;
+  hdfsdm1_channel2.Init.SerialInterface.SpiClock = DFSDM_CHANNEL_SPI_CLOCK_INTERNAL;
+  hdfsdm1_channel2.Init.Awd.FilterOrder = DFSDM_CHANNEL_FASTSINC_ORDER;
+  hdfsdm1_channel2.Init.Awd.Oversampling = 1;
+  hdfsdm1_channel2.Init.Offset = 0;
+  hdfsdm1_channel2.Init.RightBitShift = 0x00;
+  if (HAL_DFSDM_ChannelInit(&hdfsdm1_channel2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_DFSDM_FilterConfigRegChannel(&hdfsdm1_filter0, DFSDM_CHANNEL_2, DFSDM_CONTINUOUS_CONV_ON) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN DFSDM1_Init 2 */
+
+  /* USER CODE END DFSDM1_Init 2 */
 
 }
 
@@ -397,7 +523,7 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x00100D14;
+  hi2c2.Init.Timing = 0x30A175AB;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -430,6 +556,54 @@ static void MX_I2C2_Init(void)
 }
 
 /**
+  * @brief OCTOSPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_OCTOSPI1_Init(void)
+{
+
+  /* USER CODE BEGIN OCTOSPI1_Init 0 */
+
+  /* USER CODE END OCTOSPI1_Init 0 */
+
+  OSPIM_CfgTypeDef OSPIM_Cfg_Struct = {0};
+
+  /* USER CODE BEGIN OCTOSPI1_Init 1 */
+
+  /* USER CODE END OCTOSPI1_Init 1 */
+  /* OCTOSPI1 parameter configuration*/
+  hospi1.Instance = OCTOSPI1;
+  hospi1.Init.FifoThreshold = 1;
+  hospi1.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
+  hospi1.Init.MemoryType = HAL_OSPI_MEMTYPE_MICRON;
+  hospi1.Init.DeviceSize = 32;
+  hospi1.Init.ChipSelectHighTime = 1;
+  hospi1.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
+  hospi1.Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
+  hospi1.Init.ClockPrescaler = 1;
+  hospi1.Init.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE;
+  hospi1.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_DISABLE;
+  hospi1.Init.ChipSelectBoundary = 0;
+  hospi1.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_BYPASSED;
+  if (HAL_OSPI_Init(&hospi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  OSPIM_Cfg_Struct.ClkPort = 1;
+  OSPIM_Cfg_Struct.NCSPort = 1;
+  OSPIM_Cfg_Struct.IOLowPort = HAL_OSPIM_IOPORT_1_LOW;
+  if (HAL_OSPIM_Config(&hospi1, &OSPIM_Cfg_Struct, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN OCTOSPI1_Init 2 */
+
+  /* USER CODE END OCTOSPI1_Init 2 */
+
+}
+
+/**
   * @brief TIM2 Initialization Function
   * @param None
   * @retval None
@@ -448,9 +622,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 79;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 62;
+  htim2.Init.Period = 7487;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -536,6 +710,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
 
 }
 
@@ -554,8 +731,8 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
@@ -565,14 +742,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BUTTON_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PE7 PE9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF6_DFSDM1;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
@@ -591,6 +760,23 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hfilter)
+{
+    // Scan for loud event
+    micLoud = 0;
+
+    for (uint32_t i = 0; i < NSAMPLES; i++)
+    {
+        int32_t s = micBuffer[i] >> 8;  // top 24-bit
+        if (s < 0) s = -s;              // absolute amplitude
+
+        if (s > MIC_THRESHOLD)
+        {
+            micLoud = 1;
+            break;
+        }
+    }
+}
 // Called automatically on button interrupt (PC13 -> EXTI15_10)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -608,7 +794,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         	g_state = GAME_STARTING;
         }
         else if ( g_state == GAME_ON) {
-        	playerResponded  = 1;
+        	if (currentCue == CUE_LED) {
+        		playerResponded  = 1;
+        	} else {
+        		playerFail = 1;
+        	}
         }
         else if (g_state == GAME_DONE) {
         	g_state = GAME_STARTING; // restart game (play notes and print "game start")

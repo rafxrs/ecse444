@@ -1,129 +1,317 @@
-16:35:44 **** Incremental Build of configuration Debug for project fproject ****
+15:19:35 **** Incremental Build of configuration Debug for project fproject ****
 make -j20 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29264	     92	   4388	  33744	   83d0	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-16:35:47 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-size  fproject.elf 
-   text	   data	    bss	    dec	    hex	filename
-  29264	     92	   4388	  33744	   83d0	fproject.elf
-Finished building: default.size.stdout
- 
-16:37:55 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29264	     92	   4388	  33744	   83d0	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-16:39:53 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29328	     92	   4388	  33808	   8410	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-16:42:00 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29328	     92	   4388	  33808	   8410	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-16:44:31 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29324	     92	   4388	  33804	   840c	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-16:47:51 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29320	     92	   4388	  33800	   8408	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-16:52:16 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: fproject.elf
- 
-arm-none-eabi-size  fproject.elf 
-arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
-   text	   data	    bss	    dec	    hex	filename
-  29320	     92	   4388	  33800	   8408	fproject.elf
-Finished building: default.size.stdout
- 
-Finished building: fproject.list
- 
-17:04:44 **** Incremental Build of configuration Debug for project fproject ****
-make -j20 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-../Core/Src/main.c: In function 'HAL_GPIO_EXTI_Callback':
-../Core/Src/main.c:612:17: error: 'player_responded' undeclared (first use in this function); did you mean 'playerResponded'?
-  612 |                 player_responded = 1;
-      |                 ^~~~~~~~~~~~~~~~
-      |                 playerResponded
-../Core/Src/main.c:612:17: note: each undeclared identifier is reported only once for each function it appears in
-make: *** [Core/Src/subdir.mk:40: Core/Src/main.o] Error 1
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:389:13: error: invalid storage class for function 'MX_DAC1_Init'
+  389 | static void MX_DAC1_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:433:13: error: invalid storage class for function 'MX_DFSDM1_Init'
+  433 | static void MX_DFSDM1_Init(void)
+      |             ^~~~~~~~~~~~~~
+../Core/Src/main.c:486:13: error: invalid storage class for function 'MX_I2C2_Init'
+  486 | static void MX_I2C2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:534:13: error: invalid storage class for function 'MX_OCTOSPI1_Init'
+  534 | static void MX_OCTOSPI1_Init(void)
+      |             ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:582:13: error: invalid storage class for function 'MX_TIM2_Init'
+  582 | static void MX_TIM2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:627:13: error: invalid storage class for function 'MX_USART1_UART_Init'
+  627 | static void MX_USART1_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:673:13: error: invalid storage class for function 'MX_DMA_Init'
+  673 | static void MX_DMA_Init(void)
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:695:13: error: invalid storage class for function 'MX_GPIO_Init'
+  695 | static void MX_GPIO_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:779:1: error: expected declaration or statement at end of input
+  779 | }
+      | ^
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:102:13: warning: 'MX_GPIO_Init' used but never defined
+  102 | static void MX_GPIO_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:103:13: warning: 'MX_DMA_Init' used but never defined
+  103 | static void MX_DMA_Init(void);
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:104:13: warning: 'MX_DAC1_Init' used but never defined
+  104 | static void MX_DAC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:105:13: warning: 'MX_TIM2_Init' used but never defined
+  105 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:106:13: warning: 'MX_I2C2_Init' used but never defined
+  106 | static void MX_I2C2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:107:13: warning: 'MX_USART1_UART_Init' used but never defined
+  107 | static void MX_USART1_UART_Init(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:108:13: warning: 'MX_DFSDM1_Init' used but never defined
+  108 | static void MX_DFSDM1_Init(void);
+      |             ^~~~~~~~~~~~~~
+../Core/Src/main.c:109:13: warning: 'MX_OCTOSPI1_Init' used but never defined
+  109 | static void MX_OCTOSPI1_Init(void);
+      |             ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:770:6: warning: 'Error_Handler' defined but not used [-Wunused-function]
+  770 | void Error_Handler(void)
+      |      ^~~~~~~~~~~~~
+../Core/Src/main.c:735:6: warning: 'HAL_GPIO_EXTI_Callback' defined but not used [-Wunused-function]
+  735 | void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+      |      ^~~~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:695:13: warning: 'MX_GPIO_Init' defined but not used [-Wunused-function]
+  695 | static void MX_GPIO_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:673:13: warning: 'MX_DMA_Init' defined but not used [-Wunused-function]
+  673 | static void MX_DMA_Init(void)
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:627:13: warning: 'MX_USART1_UART_Init' defined but not used [-Wunused-function]
+  627 | static void MX_USART1_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:582:13: warning: 'MX_TIM2_Init' defined but not used [-Wunused-function]
+  582 | static void MX_TIM2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:534:13: warning: 'MX_OCTOSPI1_Init' defined but not used [-Wunused-function]
+  534 | static void MX_OCTOSPI1_Init(void)
+      |             ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:486:13: warning: 'MX_I2C2_Init' defined but not used [-Wunused-function]
+  486 | static void MX_I2C2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:433:13: warning: 'MX_DFSDM1_Init' defined but not used [-Wunused-function]
+  433 | static void MX_DFSDM1_Init(void)
+      |             ^~~~~~~~~~~~~~
+../Core/Src/main.c:389:13: warning: 'MX_DAC1_Init' defined but not used [-Wunused-function]
+  389 | static void MX_DAC1_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:338:6: warning: 'SystemClock_Config' defined but not used [-Wunused-function]
+  338 | void SystemClock_Config(void)
+      |      ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:97:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   97 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
+make: *** [Core/Src/subdir.mk:43: Core/Src/main.o] Error 1
 "make -j20 all" terminated with exit code 2. Build might be incomplete.
-17:05:30 **** Incremental Build of configuration Debug for project fproject ****
+15:19:43 **** Incremental Build of configuration Debug for project fproject ****
 make -j20 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:389:13: error: invalid storage class for function 'MX_DAC1_Init'
+  389 | static void MX_DAC1_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:433:13: error: invalid storage class for function 'MX_DFSDM1_Init'
+  433 | static void MX_DFSDM1_Init(void)
+      |             ^~~~~~~~~~~~~~
+../Core/Src/main.c:486:13: error: invalid storage class for function 'MX_I2C2_Init'
+  486 | static void MX_I2C2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:534:13: error: invalid storage class for function 'MX_OCTOSPI1_Init'
+  534 | static void MX_OCTOSPI1_Init(void)
+      |             ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:582:13: error: invalid storage class for function 'MX_TIM2_Init'
+  582 | static void MX_TIM2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:627:13: error: invalid storage class for function 'MX_USART1_UART_Init'
+  627 | static void MX_USART1_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:673:13: error: invalid storage class for function 'MX_DMA_Init'
+  673 | static void MX_DMA_Init(void)
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:695:13: error: invalid storage class for function 'MX_GPIO_Init'
+  695 | static void MX_GPIO_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:779:1: error: expected declaration or statement at end of input
+  779 | }
+      | ^
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:102:13: warning: 'MX_GPIO_Init' used but never defined
+  102 | static void MX_GPIO_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:103:13: warning: 'MX_DMA_Init' used but never defined
+  103 | static void MX_DMA_Init(void);
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:104:13: warning: 'MX_DAC1_Init' used but never defined
+  104 | static void MX_DAC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:105:13: warning: 'MX_TIM2_Init' used but never defined
+  105 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:106:13: warning: 'MX_I2C2_Init' used but never defined
+  106 | static void MX_I2C2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:107:13: warning: 'MX_USART1_UART_Init' used but never defined
+  107 | static void MX_USART1_UART_Init(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:108:13: warning: 'MX_DFSDM1_Init' used but never defined
+  108 | static void MX_DFSDM1_Init(void);
+      |             ^~~~~~~~~~~~~~
+../Core/Src/main.c:109:13: warning: 'MX_OCTOSPI1_Init' used but never defined
+  109 | static void MX_OCTOSPI1_Init(void);
+      |             ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:770:6: warning: 'Error_Handler' defined but not used [-Wunused-function]
+  770 | void Error_Handler(void)
+      |      ^~~~~~~~~~~~~
+../Core/Src/main.c:735:6: warning: 'HAL_GPIO_EXTI_Callback' defined but not used [-Wunused-function]
+  735 | void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+      |      ^~~~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:695:13: warning: 'MX_GPIO_Init' defined but not used [-Wunused-function]
+  695 | static void MX_GPIO_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:673:13: warning: 'MX_DMA_Init' defined but not used [-Wunused-function]
+  673 | static void MX_DMA_Init(void)
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:627:13: warning: 'MX_USART1_UART_Init' defined but not used [-Wunused-function]
+  627 | static void MX_USART1_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:582:13: warning: 'MX_TIM2_Init' defined but not used [-Wunused-function]
+  582 | static void MX_TIM2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:534:13: warning: 'MX_OCTOSPI1_Init' defined but not used [-Wunused-function]
+  534 | static void MX_OCTOSPI1_Init(void)
+      |             ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:486:13: warning: 'MX_I2C2_Init' defined but not used [-Wunused-function]
+  486 | static void MX_I2C2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:433:13: warning: 'MX_DFSDM1_Init' defined but not used [-Wunused-function]
+  433 | static void MX_DFSDM1_Init(void)
+      |             ^~~~~~~~~~~~~~
+../Core/Src/main.c:389:13: warning: 'MX_DAC1_Init' defined but not used [-Wunused-function]
+  389 | static void MX_DAC1_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:338:6: warning: 'SystemClock_Config' defined but not used [-Wunused-function]
+  338 | void SystemClock_Config(void)
+      |      ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:97:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   97 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
+make: *** [Core/Src/subdir.mk:43: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+15:20:44 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:97:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   97 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
 arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: fproject.elf
  
 arm-none-eabi-size  fproject.elf 
 arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
    text	   data	    bss	    dec	    hex	filename
-  33132	    108	   4452	  37692	   933c	fproject.elf
+  46316	    160	   4992	  51468	   c90c	fproject.elf
+Finished building: default.size.stdout
+ 
+Finished building: fproject.list
+ 
+15:22:42 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-size  fproject.elf 
+   text	   data	    bss	    dec	    hex	filename
+  46316	    160	   4992	  51468	   c90c	fproject.elf
+Finished building: default.size.stdout
+ 
+15:22:57 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-size  fproject.elf 
+   text	   data	    bss	    dec	    hex	filename
+  46316	    160	   4992	  51468	   c90c	fproject.elf
+Finished building: default.size.stdout
+ 
+15:31:37 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:97:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   97 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
+arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: fproject.elf
+ 
+arm-none-eabi-size  fproject.elf 
+arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
+   text	   data	    bss	    dec	    hex	filename
+  46312	    160	   4992	  51464	   c908	fproject.elf
+Finished building: default.size.stdout
+ 
+Finished building: fproject.list
+ 
+15:46:45 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:102:27: error: 'NSAMPLES' undeclared here (not in a function)
+  102 | static int32_t  micBuffer[NSAMPLES];
+      |                           ^~~~~~~~
+../Core/Src/main.c: In function 'start_recording':
+../Core/Src/main.c:188:3: error: 'g_record_done' undeclared (first use in this function)
+  188 |   g_record_done = 0;
+      |   ^~~~~~~~~~~~~
+../Core/Src/main.c:188:3: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/main.c:189:3: error: 'g_request_playback' undeclared (first use in this function)
+  189 |   g_request_playback = 0;        // cancel any pending playback request
+      |   ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:190:13: error: 'APP_RECORDING' undeclared (first use in this function)
+  190 |   g_state = APP_RECORDING;
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:185:13: warning: 'start_recording' defined but not used [-Wunused-function]
+  185 | static void start_recording(void)
+      |             ^~~~~~~~~~~~~~~
+../Core/Src/main.c:179:13: warning: 'convert_recording_to_dac' defined but not used [-Wunused-function]
+  179 | static void convert_recording_to_dac(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:104:17: warning: 'dacSampleBuffer' defined but not used [-Wunused-variable]
+  104 | static uint16_t dacSampleBuffer[NSAMPLES];
+      |                 ^~~~~~~~~~~~~~~
+../Core/Src/main.c:102:17: warning: 'micBuffer' defined but not used [-Wunused-variable]
+  102 | static int32_t  micBuffer[NSAMPLES];
+      |                 ^~~~~~~~~
+../Core/Src/main.c:98:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   98 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
+make: *** [Core/Src/subdir.mk:43: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+15:49:08 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:103:17: warning: 'dacSampleBuffer' defined but not used [-Wunused-variable]
+  103 | static uint16_t dacSampleBuffer[NSAMPLES];
+      |                 ^~~~~~~~~~~~~~~
+../Core/Src/main.c:98:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   98 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
+arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: fproject.elf
+ 
+arm-none-eabi-size  fproject.elf 
+arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
+   text	   data	    bss	    dec	    hex	filename
+  47272	    160	   7040	  54472	   d4c8	fproject.elf
+Finished building: default.size.stdout
+ 
+Finished building: fproject.list
+ 
+15:50:34 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-size  fproject.elf 
+   text	   data	    bss	    dec	    hex	filename
+  47272	    160	   7040	  54472	   d4c8	fproject.elf
+Finished building: default.size.stdout
+ 
+15:54:02 **** Incremental Build of configuration Debug for project fproject ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Drivers/Components -I../Drivers/Components/lsm6dsl -I../Drivers/Components/Common -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:103:17: warning: 'dacSampleBuffer' defined but not used [-Wunused-variable]
+  103 | static uint16_t dacSampleBuffer[NSAMPLES];
+      |                 ^~~~~~~~~~~~~~~
+../Core/Src/main.c:98:17: warning: 'flash_addr' defined but not used [-Wunused-variable]
+   98 | static uint32_t flash_addr = FLASH_ADDR_BASE;
+      |                 ^~~~~~~~~~
+arm-none-eabi-gcc -o "fproject.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\rafae\STM32CubeIDE\workspace_1.19.0\fproject\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="fproject.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: fproject.elf
+ 
+arm-none-eabi-size  fproject.elf 
+arm-none-eabi-objdump -h -S fproject.elf  > "fproject.list"
+   text	   data	    bss	    dec	    hex	filename
+  47272	    160	   7040	  54472	   d4c8	fproject.elf
 Finished building: default.size.stdout
  
 Finished building: fproject.list

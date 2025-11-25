@@ -4,3 +4,7 @@ mag_data
 accel_data
 sensor_mode
 g_state
+currentCue
+accel_data
+playerFail
+micBuffer
