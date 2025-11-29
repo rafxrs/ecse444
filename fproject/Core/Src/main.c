@@ -113,6 +113,8 @@ volatile int16_t accel_data[3];
 GameStats stats;
 uint32_t  lastScore;
 volatile uint8_t micLoud = 0;
+extern osMessageQId AudioQueueHandle;
+extern osSemaphoreId MicSemHandle;
 
 // Mic (DFSDM) raw buffer (32-bit words with top 24-bit signed sample)
 int32_t  micBuffer[NSAMPLES];
@@ -122,7 +124,6 @@ int32_t  micBuffer[NSAMPLES];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-
 /* USER CODE BEGIN PFP */
 
 /* Helper prototypes so freertos.c can call them */
@@ -237,13 +238,26 @@ void Flash_WriteStats(GameStats *s)
   */
 int main(void)
 {
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
   /* Configure the system clock */
   SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -254,41 +268,25 @@ int main(void)
   MX_USART1_UART_Init();
   MX_DFSDM1_Init();
   MX_OCTOSPI1_Init();
-
   /* USER CODE BEGIN 2 */
-  BSP_ACCELERO_Init();
-  BSP_QSPI_Init();
-  Flash_ReadStats(&stats);
 
-  // --- Flash corruption check ---
-  uint32_t avg100 = 0;
-  if (stats.gamesPlayed > 0) {
-      avg100 = (stats.totalScore * 100) / stats.gamesPlayed;
-  }
-  uint32_t avgScore = avg100 / 100;
+  /* USER CODE END 2 */
 
-  // If impossible scores → flash is corrupted → erase chip and reset
-  if (stats.bestScore > NUM_CUES ||
-      avgScore > NUM_CUES)
-  {
-      BSP_QSPI_Erase_Chip();
-      while (BSP_QSPI_GetStatus() != QSPI_OK);
-
-      HAL_Delay(200);
-
-      NVIC_SystemReset();   // reboot with clean flash
-  }
-
-  /* Initialize FreeRTOS objects (tasks, etc.) */
+  /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
 
   /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -309,7 +307,9 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Initializes the RCC Oscillators */
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
@@ -326,11 +326,12 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Initializes the CPU, AHB and APB buses clocks */
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
@@ -344,20 +345,12 @@ void SystemClock_Config(void)
 
 void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hfilter)
 {
-    // Scan for loud event
-    micLoud = 0;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    for (uint32_t i = 0; i < NSAMPLES; i++)
-    {
-        threshold = micBuffer[i] >> 8;  // top 24-bit
-        if (threshold < 0) threshold = -threshold;  // absolute amplitude
+    // Wake mic task
+    xSemaphoreGiveFromISR(MicSemHandle, &xHigherPriorityTaskWoken);
 
-        if (threshold > MIC_THRESHOLD)
-        {
-            micLoud = 1;
-            break;
-        }
-    }
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // Called automatically on button interrupt (PC13 -> EXTI15_10)
@@ -390,13 +383,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 /**
   * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
     HAL_IncTick();
   }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
 }
 
 /**
@@ -405,16 +409,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   */
 void Error_Handler(void)
 {
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
   }
+  /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
-  (void)file;
-  (void)line;
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

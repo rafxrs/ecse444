@@ -1,0 +1,512 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * File Name          : freertos.c
+  * Description        : Code for freertos applications
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "stm32l4s5i_iot01_accelero.h"
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* These come from main.c */
+typedef enum {
+  GAME_AWAKE,
+  GAME_IDLE,
+  GAME_STARTING,
+  GAME_ON,
+  GAME_ENDING,
+  GAME_DONE
+} GameState;
+
+typedef enum {
+    CUE_SOUND1 = 0,
+    CUE_SOUND2,
+    CUE_SOUND3,
+    CUE_LED
+} CueType;
+
+typedef struct {
+    uint32_t magic;
+    uint32_t bestScore;
+    uint32_t gamesPlayed;
+    uint32_t totalScore;
+} GameStats;
+
+typedef struct {
+    float freq;
+    uint16_t duration_ms;
+} AudioCmd;
+
+/* USER CODE END PTD */
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+#define NUM_CUES      30
+#define CUE_DELAY_MS  1500 // 1.5 secs
+#define MIC_THRESHOLD 50000
+#define NSAMPLES      512
+#define NOTE_DURATION_MS 250
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN Variables */
+
+/* Externs from main.c */
+extern GameState g_state;
+extern uint16_t  noteBuf[];
+extern uint32_t  noteLen;
+extern CueType   cueList[];
+extern uint8_t   cueResults[];
+extern volatile uint8_t playerResponded;
+extern volatile uint8_t playerFail;
+extern volatile CueType currentCue;
+extern volatile int32_t threshold;
+extern volatile int16_t accel_data[3];
+extern GameStats stats;
+extern uint32_t  lastScore;
+extern volatile uint8_t micLoud;
+extern int32_t   micBuffer[];
+/* Helper functions from main.c */
+void stop_playback_if_running(void);
+void start_note_circular(float freq_hz, uint16_t *buf, uint32_t *len);
+void play_start_sequence(void);
+void play_end_sequence(void);
+void Flash_WriteStats(GameStats *s);
+
+/* Handles from HAL drivers */
+extern DFSDM_Filter_HandleTypeDef hdfsdm1_filter0;
+extern UART_HandleTypeDef         huart1;
+
+/* USER CODE END Variables */
+osThreadId defaultTaskHandle;
+osThreadId GameTaskHandle;
+osThreadId MicTaskHandle;
+osThreadId FlashTaskHandle;
+osThreadId AudioTaskHandle;
+osMessageQId AudioQueueHandle;
+osSemaphoreId MicSemHandle;
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+
+/* USER CODE END FunctionPrototypes */
+
+void StartDefaultTask(void const * argument);
+void StartTask02(void const * argument);
+void StartTask03(void const * argument);
+void StartTask04(void const * argument);
+void StartTask05(void const * argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t  xIdleStack[configMINIMAL_STACK_SIZE];
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
+                                    StackType_t **ppxIdleTaskStackBuffer,
+                                    uint32_t *pulIdleTaskStackSize )
+{
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+  *ppxIdleTaskStackBuffer = &xIdleStack[0];
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+/* USER CODE END GET_IDLE_TASK_MEMORY */
+
+/**
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
+  /* USER CODE END Init */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of MicSem */
+  osSemaphoreDef(MicSem);
+  MicSemHandle = osSemaphoreCreate(osSemaphore(MicSem), 0);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* definition and creation of AudioQueue */
+
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  osMessageQDef(AudioQueue, 4, AudioCmd);
+  AudioQueueHandle = osMessageCreate(osMessageQ(AudioQueue), NULL);
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of GameTask */
+  osThreadDef(GameTask, StartTask02, osPriorityNormal, 0, 512);
+  GameTaskHandle = osThreadCreate(osThread(GameTask), NULL);
+
+  /* definition and creation of MicTask */
+  osThreadDef(MicTask, StartTask03, osPriorityHigh, 0, 256);
+  MicTaskHandle = osThreadCreate(osThread(MicTask), NULL);
+
+  /* definition and creation of FlashTask */
+  osThreadDef(FlashTask, StartTask04, osPriorityLow, 0, 256);
+  FlashTaskHandle = osThreadCreate(osThread(FlashTask), NULL);
+
+  /* definition and creation of AudioTask */
+  osThreadDef(AudioTask, StartTask05, osPriorityAboveNormal, 0, 256);
+  AudioTaskHandle = osThreadCreate(osThread(AudioTask), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add any extra RTOS objects here if needed */
+  /* USER CODE END RTOS_THREADS */
+
+}
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDefaultTask */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartTask02 */
+/**
+* @brief Function implementing the GameTask thread.
+*/
+/* USER CODE END Header_StartTask02 */
+void StartTask02(void const * argument)
+{
+  /* USER CODE BEGIN StartTask02 */
+
+  for(;;)
+  {
+      switch (g_state) {
+
+          case GAME_AWAKE:
+          {
+              // Display rules once
+              char msg[512];
+              snprintf(msg,sizeof(msg),
+                      "\r\n--- Reflex Game ---\r\n"
+                      "Rules:\r\n"
+                      "- 30 cues (3 sounds + 1 LED)\r\n"
+                      "- When LED lights -> press button\r\n"
+                      "- High note: tilt right. Low note: tilt left\r\n"
+                      "- Middle note: make a sound!\r\n"
+                      "- Start game with button press\r\n"
+                      "- When game starts, listen for 3 countdown tones\r\n"
+                      "- Score printed at end. Play again with button press\r\n\r\n");
+              HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+              g_state = GAME_IDLE;
+              break;
+          }
+
+          case GAME_IDLE:
+          {
+        	  taskYIELD();
+
+              // Prepare new random sequence when entering idle
+              static uint8_t initialized = 0;
+              if (!initialized) {
+                  srand(HAL_GetTick());  // seed RNG once per boot
+                  initialized = 1;
+              }
+
+              for (int i = 0; i < NUM_CUES; i++) {
+                  cueList[i]   = rand() % 4;   // 0–3 inclusive
+                  cueResults[i] = 0;
+              }
+              break;
+          }
+
+          case GAME_STARTING:
+          {
+              char m[64] = "Game start!\r\n";
+              HAL_UART_Transmit(&huart1, (uint8_t*)m, strlen(m), HAL_MAX_DELAY);
+
+              play_start_sequence();
+              g_state = GAME_ON;
+              break;
+          }
+
+          case GAME_ON:
+          {
+              char msg[64];
+              uint32_t score = 0;
+
+              for (int i = 0; i < NUM_CUES; i++) {
+                  playerResponded = 0;
+                  playerFail      = 0;
+
+                  // Present cue
+                  currentCue = cueList[i];
+                  switch (currentCue) {
+					  case CUE_SOUND1:
+					  {
+						  AudioCmd cmd = {.freq = 600.0f, .duration_ms = NOTE_DURATION_MS};
+						  xQueueSend(AudioQueueHandle, &cmd, 0);
+						  break;
+					  }
+
+					  case CUE_SOUND2:
+					  {
+						  AudioCmd cmd = {.freq = 1000.0f, .duration_ms = NOTE_DURATION_MS};
+						  xQueueSend(AudioQueueHandle, &cmd, 0);
+						  break;
+					  }
+
+					  case CUE_SOUND3:
+					  {
+						  AudioCmd cmd = {.freq = 800.0f, .duration_ms = NOTE_DURATION_MS};
+						  xQueueSend(AudioQueueHandle, &cmd, 0);
+						  HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, micBuffer, NSAMPLES);
+						  break;
+					  }
+                      case CUE_LED:
+                          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+                          break;
+                  }
+
+                  // Wait for reaction window
+                  uint32_t start = HAL_GetTick();
+                  while ((HAL_GetTick() - start) < CUE_DELAY_MS) {
+                	  osDelay(1);
+                      if (playerResponded || playerFail) {
+                          break;
+                      }
+
+                      if (currentCue == CUE_SOUND1 || currentCue == CUE_SOUND2) {
+                          // poll accelerometer
+                          BSP_ACCELERO_AccGetXYZ((int16_t*)accel_data);
+                          osDelay(5);
+
+                          if (currentCue == CUE_SOUND1) {
+                              if (accel_data[0] > 500) {
+                                  playerResponded = 1;
+                              }
+                              else if (accel_data[0] < -500) {
+                                  playerFail = 1;
+                              }
+                          } else { // SOUND2
+                              if (accel_data[0] < -500) {
+                                  playerResponded = 1;
+                              }
+                              else if (accel_data[0] > 500) {
+                                  playerFail = 1;
+                              }
+                          }
+                      }
+
+                      // microphone cue
+                      if (currentCue == CUE_SOUND3) {
+                          if (micLoud) {
+                              playerResponded = 1;
+                          }
+                      }
+                  }
+
+                  // Evaluate result
+                  if (playerResponded) {
+                      cueResults[i] = 1;
+                      score++;
+                      sprintf(msg, "Cue %02d: PASS\r\n", i+1);
+                  } else {
+                      cueResults[i] = 0;
+                      sprintf(msg, "Cue %02d: MISS\r\n", i+1);
+                  }
+                  HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+                  // Cleanup
+                  stop_playback_if_running();
+                  HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
+                  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+                  osDelay(300); // small gap before next cue
+              }
+
+              // Game summary
+              sprintf(msg, "\r\nFinal score: %lu / %d\r\n", score, NUM_CUES);
+              HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+              // Update stats
+              stats.gamesPlayed++;
+              stats.totalScore += score;
+              if (score > stats.bestScore)
+                  stats.bestScore = score;
+
+              // Compute average AFTER update
+              uint32_t avg100 = 0;
+              if (stats.gamesPlayed > 0) {
+                  avg100 = (stats.totalScore * 100) / stats.gamesPlayed;
+              }
+
+              // Save to flash
+              lastScore = score;
+              Flash_WriteStats(&stats);
+              osDelay(10);
+
+              // Print stats
+              char msgStats[128];
+              snprintf(msgStats, sizeof(msgStats),
+                      "Best score: %lu\r\nGames played: %lu\r\nAverage score: %lu.%02lu\r\n",
+                      stats.bestScore,
+                      stats.gamesPlayed,
+                      avg100 / 100, avg100 % 100);
+
+              HAL_UART_Transmit(&huart1, (uint8_t*)msgStats, strlen(msgStats), HAL_MAX_DELAY);
+
+              g_state = GAME_ENDING;
+              break;
+          }
+
+          case GAME_ENDING:
+          {
+              play_end_sequence();
+              char msg2[] = "Game ended!\r\n\r\nPress button to restart.\r\n";
+              HAL_UART_Transmit(&huart1, (uint8_t*)msg2, strlen(msg2), HAL_MAX_DELAY);
+              g_state = GAME_DONE;
+              break;
+          }
+
+          case GAME_DONE:
+          default:
+        	  osDelay(1);
+              break;
+      }
+
+      osDelay(1);   // small yield each loop
+  }
+
+  /* USER CODE END StartTask02 */
+}
+
+/* USER CODE BEGIN Header_StartTask03 */
+/**
+* @brief Function implementing the MicTask thread.
+*/
+/* USER CODE END Header_StartTask03 */
+void StartTask03(void const * argument)
+{
+  /* USER CODE BEGIN StartTask03 */
+    for(;;)
+    {
+        // Wait for new mic samples
+        if (xSemaphoreTake(MicSemHandle, portMAX_DELAY) == pdTRUE)
+        {
+            uint8_t loud = 0;
+
+            for (int i = 0; i < NSAMPLES; i++)
+            {
+                int32_t sample = micBuffer[i] >> 8;
+                if (sample < 0) sample = -sample;
+
+                if (sample > MIC_THRESHOLD)
+                {
+                    loud = 1;
+                    break;
+                }
+            }
+
+            // Update the shared flag
+            micLoud = loud;
+        }
+    }
+  /* USER CODE END StartTask03 */
+}
+
+/* USER CODE BEGIN Header_StartTask04 */
+/**
+* @brief Function implementing the FlashTask thread.
+*/
+/* USER CODE END Header_StartTask04 */
+void StartTask04(void const * argument)
+{
+  /* USER CODE BEGIN StartTask04 */
+  /* Not used yet – flash writes are done from GameTask.
+     Could be turned into a QSPI worker later. */
+  for(;;)
+  {
+    osDelay(50);
+  }
+  /* USER CODE END StartTask04 */
+}
+
+/* USER CODE BEGIN Header_StartTask05 */
+/**
+* @brief Function implementing the AudioTask thread.
+*/
+/* USER CODE END Header_StartTask05 */
+void StartTask05(void const * argument)
+{
+  /* USER CODE BEGIN StartTask05 */
+    AudioCmd cmd;
+    for(;;)
+    {
+        if (xQueueReceive(AudioQueueHandle, &cmd, portMAX_DELAY)) {
+            start_note_circular(cmd.freq, noteBuf, &noteLen);
+            osDelay(cmd.duration_ms);
+        }
+    }
+  /* USER CODE END StartTask05 */
+}
+
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
+
+/* USER CODE END Application */

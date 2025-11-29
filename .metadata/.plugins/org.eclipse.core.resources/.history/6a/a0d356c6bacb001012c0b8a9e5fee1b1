@@ -1,0 +1,433 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "cmsis_os.h"
+#include "dac.h"
+#include "dfsdm.h"
+#include "dma.h"
+#include "i2c.h"
+#include "octospi.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "math.h"
+#include "arm_math.h"
+#include "stm32l4s5i_iot01_accelero.h"
+#include "stm32l4s5i_iot01_qspi.h"
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+typedef enum {
+  GAME_AWAKE,
+  GAME_IDLE,
+  GAME_STARTING,
+  GAME_ON,
+  GAME_ENDING,
+  GAME_DONE
+} GameState;
+
+typedef enum {
+    CUE_SOUND1 = 0,
+    CUE_SOUND2,
+    CUE_SOUND3,
+    CUE_LED
+} CueType;
+
+typedef struct {
+    uint32_t magic;          // 0xDEADBEEF to validate data
+    uint32_t bestScore;      // best score so far
+    uint32_t gamesPlayed;    // number of games played
+    uint32_t totalScore;     // sum of all scores
+} GameStats;
+
+typedef struct {
+    uint32_t magic;      // 0xDEADBEEF
+    uint32_t score;      // score for one run
+} GameRecord;
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+#define FS_HZ             16000.0f
+#define DAC_MID           2048
+#define DAC_AMP           2000
+#define NOTE_DURATION_MS  250
+#define NOTE_MAX_SAMPLES  1024
+#define NUM_CUES          30
+#define CUE_DELAY_MS      1500      // 1.5 secs
+#define FLASH_ADDR_BASE   0x000000
+#define FLASH_STATS_ADDR    0x000000       // location of GameStats
+#define FLASH_STATS_SECTOR  0x000000       // must be sector-aligned
+#define MIC_THRESHOLD     50000   // adjust after testing
+#define NSAMPLES          512
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+
+// Global game state (shared with freertos.c via extern)
+GameState g_state = GAME_AWAKE;
+uint16_t  noteBuf[NOTE_MAX_SAMPLES];
+uint32_t  noteLen = 0;
+CueType   cueList[NUM_CUES];
+uint8_t   cueResults[NUM_CUES];    // 1 = pass, 0 = miss
+volatile uint8_t playerResponded = 0;
+volatile uint8_t playerFail      = 0;
+volatile CueType currentCue      = CUE_LED;
+volatile int32_t threshold;
+volatile int16_t accel_data[3];
+GameStats stats;
+uint32_t  lastScore;
+volatile uint8_t micLoud = 0;
+
+// Mic (DFSDM) raw buffer (32-bit words with top 24-bit signed sample)
+int32_t  micBuffer[NSAMPLES];
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
+/* USER CODE BEGIN PFP */
+
+/* Helper prototypes so freertos.c can call them */
+void stop_playback_if_running(void);
+void start_note_circular(float freq_hz, uint16_t *buf, uint32_t *len);
+void play_start_sequence(void);
+void play_end_sequence(void);
+static inline uint16_t q24_to_dac12(int32_t s);
+void Flash_ReadStats(GameStats *s);
+void Flash_WriteStats(GameStats *s);
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+void stop_playback_if_running(void) {
+  HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
+  HAL_TIM_Base_Stop(&htim2);
+}
+
+// Build one full-period sine buffer and start circular DMA playback
+void start_note_circular(float freq_hz, uint16_t *buf, uint32_t *len) {
+  float samples_per_period_f = FS_HZ / freq_hz;
+  uint32_t samples = (uint32_t)(samples_per_period_f + 0.5f);
+  if (samples < 16) samples = 16;
+  if (samples > NOTE_MAX_SAMPLES) samples = NOTE_MAX_SAMPLES;
+
+  for (uint32_t i = 0; i < samples; i++) {
+    float ph = 2.0f * M_PI * ((float)i / (float)samples);
+    float s  = arm_sin_f32(ph);
+    int32_t v = DAC_MID + (int32_t)(DAC_AMP * s);
+    if (v < 0) v = 0;
+    if (v > 4095) v = 4095;
+    buf[i] = (uint16_t)v;
+  }
+
+  *len = samples;
+  HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
+  HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)buf, *len, DAC_ALIGN_12B_R);
+  HAL_TIM_Base_Start(&htim2);
+}
+
+void play_start_sequence(void) {
+  const float freqs[3] = {400.0f, 500.0f, 800.0f};
+  for (int i = 0; i < 3; i++) {
+    start_note_circular(freqs[i], noteBuf, &noteLen);
+    HAL_Delay(NOTE_DURATION_MS);
+    stop_playback_if_running();
+    HAL_Delay(100);
+  }
+}
+
+void play_end_sequence(void) {
+  const float freqs[3] = {700.0f, 500.0f, 300.0f};
+  for (int i = 0; i < 3; i++) {
+    start_note_circular(freqs[i], noteBuf, &noteLen);
+    HAL_Delay(NOTE_DURATION_MS);
+    stop_playback_if_running();
+    HAL_Delay(100);
+  }
+}
+
+// Map signed 24-bit DFSDM sample (in bits[31:8]) to unsigned 12-bit DAC
+static inline uint16_t q24_to_dac12(int32_t s)
+{
+  int32_t v = (s >> 11);       // discard 8 LSBs + reduce gain
+  v += DAC_MID;                // center around mid-scale
+  if (v < 0)    v = 0;
+  if (v > 4095) v = 4095;
+  return (uint16_t)v;
+}
+
+/* Read stats struct from flash */
+void Flash_ReadStats(GameStats *s)
+{
+    GameStats temp;
+
+    BSP_QSPI_Read((uint8_t*)&temp, FLASH_STATS_ADDR, sizeof(GameStats));
+    while (BSP_QSPI_GetStatus() != QSPI_OK);
+
+    if (temp.magic != 0xDEADBEEF)
+    {
+        // Flash is blank or corrupted → reset stats
+        s->magic       = 0xDEADBEEF;
+        s->bestScore   = 0;
+        s->gamesPlayed = 0;
+        s->totalScore  = 0;
+        return;
+    }
+
+    // Valid struct → copy to output
+    *s = temp;
+}
+
+/* Overwrite stats area with new struct */
+void Flash_WriteStats(GameStats *s)
+{
+    // Sector must be erased before writing
+    BSP_QSPI_Erase_Block(FLASH_STATS_SECTOR);
+    while (BSP_QSPI_GetStatus() != QSPI_OK);
+
+    BSP_QSPI_Write((uint8_t*)s, FLASH_STATS_ADDR, sizeof(GameStats));
+    while (BSP_QSPI_GetStatus() != QSPI_OK);
+}
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_DAC1_Init();
+  MX_TIM2_Init();
+  MX_I2C2_Init();
+  MX_USART1_UART_Init();
+  MX_DFSDM1_Init();
+  MX_OCTOSPI1_Init();
+  /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 60;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+
+void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hfilter)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    // Wake mic task
+    xSemaphoreGiveFromISR(MicSemHandle, &xHigherPriorityTaskWoken);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+// Called automatically on button interrupt (PC13 -> EXTI15_10)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == BUTTON_Pin)  // confirm it was our button
+    {
+        static uint32_t last_press = 0;
+        uint32_t now = HAL_GetTick();
+        if (now - last_press < 250) return; // debounce
+        last_press = now;
+
+        if (g_state == GAME_IDLE) {
+            g_state = GAME_STARTING;
+        }
+        else if ( g_state == GAME_ON) {
+            if (currentCue == CUE_LED) {
+                playerResponded  = 1;
+            } else {
+                playerFail = 1;
+            }
+        }
+        else if (g_state == GAME_DONE) {
+            g_state = GAME_STARTING; // restart game
+        }
+    }
+}
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+#ifdef USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */

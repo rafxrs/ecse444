@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "stm32l4s5i_iot01_accelero.h"
@@ -57,6 +58,11 @@ typedef struct {
     uint32_t totalScore;
 } GameStats;
 
+typedef struct {
+    float freq;
+    uint16_t duration_ms;
+} AudioCmd;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -66,7 +72,7 @@ typedef struct {
 #define CUE_DELAY_MS  1500 // 1.5 secs
 #define MIC_THRESHOLD 50000
 #define NSAMPLES      512
-
+#define NOTE_DURATION_MS 250
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,7 +98,6 @@ extern GameStats stats;
 extern uint32_t  lastScore;
 extern volatile uint8_t micLoud;
 extern int32_t   micBuffer[];
-
 /* Helper functions from main.c */
 void stop_playback_if_running(void);
 void start_note_circular(float freq_hz, uint16_t *buf, uint32_t *len);
@@ -105,12 +110,13 @@ extern DFSDM_Filter_HandleTypeDef hdfsdm1_filter0;
 extern UART_HandleTypeDef         huart1;
 
 /* USER CODE END Variables */
-
 osThreadId defaultTaskHandle;
 osThreadId GameTaskHandle;
 osThreadId MicTaskHandle;
 osThreadId FlashTaskHandle;
 osThreadId AudioTaskHandle;
+osMessageQId AudioQueueHandle;
+osSemaphoreId MicSemHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -126,9 +132,7 @@ void StartTask05(void const * argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
-                                    StackType_t **ppxIdleTaskStackBuffer,
-                                    uint32_t *pulIdleTaskStackSize );
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -153,6 +157,34 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   /* USER CODE END Init */
 
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of MicSem */
+  osSemaphoreDef(MicSem);
+  MicSemHandle = osSemaphoreCreate(osSemaphore(MicSem), 0);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* definition and creation of AudioQueue */
+//  osMessageQDef(AudioQueue, 4, uint16_t);
+//  AudioQueueHandle = osMessageCreate(osMessageQ(AudioQueue), NULL);
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  osMessageQDef(AudioQueue, 4, AudioCmd *);
+  AudioQueueHandle = osMessageCreate(osMessageQ(AudioQueue), NULL);
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
@@ -171,12 +203,13 @@ void MX_FREERTOS_Init(void) {
   FlashTaskHandle = osThreadCreate(osThread(FlashTask), NULL);
 
   /* definition and creation of AudioTask */
-  osThreadDef(AudioTask, StartTask05, osPriorityAboveNormal, 0, 256);
+  osThreadDef(AudioTask, StartTask05, osPriorityAboveNormal, 0, 512);
   AudioTaskHandle = osThreadCreate(osThread(AudioTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add any extra RTOS objects here if needed */
   /* USER CODE END RTOS_THREADS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -229,7 +262,7 @@ void StartTask02(void const * argument)
 
           case GAME_IDLE:
           {
-              HAL_Delay(100);
+        	  taskYIELD();
 
               // Prepare new random sequence when entering idle
               static uint8_t initialized = 0;
@@ -267,17 +300,41 @@ void StartTask02(void const * argument)
                   // Present cue
                   currentCue = cueList[i];
                   switch (currentCue) {
-                      case CUE_SOUND1:
-                          start_note_circular(600.0f, noteBuf, &noteLen);
-                          break;
-                      case CUE_SOUND2:
-                          start_note_circular(1000.0f, noteBuf, &noteLen);
-                          break;
-                      case CUE_SOUND3:
-                          start_note_circular(800.0f, noteBuf, &noteLen);
-                          micLoud = 0;
-                          HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, micBuffer, NSAMPLES);
-                          break;
+					  case CUE_SOUND1:
+					  {
+						  static AudioCmd cmd1;  // static so pointer stays valid
+						  cmd1.freq = 600.0f;
+						  cmd1.duration_ms = NOTE_DURATION_MS;
+
+						  AudioCmd *ptr = &cmd1;
+						  xQueueSend(AudioQueueHandle, &ptr, 0);
+						  break;
+					  }
+
+					  case CUE_SOUND2:
+					  {
+						  static AudioCmd cmd2;  // static so pointer stays valid
+						  cmd2.freq = 1000.0f;
+						  cmd2.duration_ms = NOTE_DURATION_MS;
+
+						  AudioCmd *ptr = &cmd2;
+						  xQueueSend(AudioQueueHandle, &ptr, 0);
+						  break;
+					  }
+
+					  case CUE_SOUND3:
+					  {
+						  micLoud = 0;
+						  static AudioCmd cmd3;  // static so pointer stays valid
+						  cmd3.freq = 800.0f;
+						  cmd3.duration_ms = NOTE_DURATION_MS;
+
+						  AudioCmd *ptr = &cmd3;
+						  xQueueSend(AudioQueueHandle, &ptr, 0);
+						  HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, micBuffer, NSAMPLES);
+						  osDelay(40);
+						  break;
+					  }
                       case CUE_LED:
                           HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
                           break;
@@ -286,14 +343,15 @@ void StartTask02(void const * argument)
                   // Wait for reaction window
                   uint32_t start = HAL_GetTick();
                   while ((HAL_GetTick() - start) < CUE_DELAY_MS) {
+                	  osDelay(1);
                       if (playerResponded || playerFail) {
-                          continue;
+                          break;
                       }
 
                       if (currentCue == CUE_SOUND1 || currentCue == CUE_SOUND2) {
                           // poll accelerometer
                           BSP_ACCELERO_AccGetXYZ((int16_t*)accel_data);
-                          HAL_Delay(5);
+                          taskYIELD();
 
                           if (currentCue == CUE_SOUND1) {
                               if (accel_data[0] > 500) {
@@ -332,10 +390,9 @@ void StartTask02(void const * argument)
                   HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 
                   // Cleanup
-                  stop_playback_if_running();
                   HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
                   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-                  HAL_Delay(300); // small gap before next cue
+                  osDelay(300); // small gap before next cue
               }
 
               // Game summary
@@ -357,7 +414,7 @@ void StartTask02(void const * argument)
               // Save to flash
               lastScore = score;
               Flash_WriteStats(&stats);
-              HAL_Delay(10);
+              osDelay(10);
 
               // Print stats
               char msgStats[128];
@@ -384,7 +441,7 @@ void StartTask02(void const * argument)
 
           case GAME_DONE:
           default:
-              HAL_Delay(1);
+        	  osDelay(1);
               break;
       }
 
@@ -402,12 +459,29 @@ void StartTask02(void const * argument)
 void StartTask03(void const * argument)
 {
   /* USER CODE BEGIN StartTask03 */
-  /* Currently mic detection is done in DFSDM DMA callback.
-     Task reserved for future extensions. */
-  for(;;)
-  {
-    osDelay(10);
-  }
+    for(;;)
+    {
+        // Wait for new mic samples
+        if (xSemaphoreTake(MicSemHandle, portMAX_DELAY) == pdTRUE)
+        {
+            uint8_t loud = 0;
+
+            for (int i = 0; i < NSAMPLES; i++)
+            {
+                int32_t sample = micBuffer[i] >> 8;
+                if (sample < 0) sample = -sample;
+
+                if (sample > MIC_THRESHOLD)
+                {
+                    loud = 1;
+                    break;
+                }
+            }
+
+            // Update the shared flag
+            micLoud = loud;
+        }
+    }
   /* USER CODE END StartTask03 */
 }
 
@@ -436,12 +510,14 @@ void StartTask04(void const * argument)
 void StartTask05(void const * argument)
 {
   /* USER CODE BEGIN StartTask05 */
-  /* Audio playback is kicked off directly in GameTask.
-     This task is a placeholder if you want to move audio there later. */
-  for(;;)
-  {
-    osDelay(50);
-  }
+	AudioCmd *cmd;
+	for (;;) {
+		if (xQueueReceive(AudioQueueHandle, &cmd, portMAX_DELAY)) {
+		    start_note_circular(cmd->freq, noteBuf, &noteLen);
+		    osDelay(cmd->duration_ms);
+		    stop_playback_if_running();
+		}
+	}
   /* USER CODE END StartTask05 */
 }
 
