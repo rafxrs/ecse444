@@ -69,7 +69,7 @@ typedef struct {
 /* USER CODE BEGIN PD */
 
 #define NUM_CUES      30
-#define CUE_DELAY_MS  1500 // 1.5 secs
+#define CUE_DELAY_MS  2000 // 2 seconds
 #define MIC_THRESHOLD 50000
 #define NSAMPLES      512
 #define NOTE_DURATION_MS 250

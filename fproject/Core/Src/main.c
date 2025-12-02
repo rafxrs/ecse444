@@ -81,11 +81,11 @@ typedef struct {
 #define NOTE_DURATION_MS  250
 #define NOTE_MAX_SAMPLES  1024
 #define NUM_CUES          30
-#define CUE_DELAY_MS      1500      // 1.5 secs
+#define CUE_DELAY_MS      2000 // 2 seconds
 #define FLASH_ADDR_BASE   0x000000
 #define FLASH_STATS_ADDR    0x000000       // location of GameStats
 #define FLASH_STATS_SECTOR  0x000000       // must be sector-aligned
-#define MIC_THRESHOLD     50000   // adjust after testing
+#define MIC_THRESHOLD     50000   // adjusted after testing
 #define NSAMPLES          512
 
 /* USER CODE END PD */
